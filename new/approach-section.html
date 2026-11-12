@@ -1,0 +1,330 @@
+<section class="s-approach apx">
+  <div class="apx_embed w-embed w-script">
+<style>
+/* ===== Approach v2 — layout ===== */
+.apx { --apx-stage: 526px; --apx-s: 1; position: relative; }
+.apx_intro { min-height: 100svh; display: flex; align-items: center; justify-content: center; }
+.apx_pin { height: 100svh; overflow: hidden; display: flex; align-items: center; }
+.apx_grid {
+  display: grid; grid-template-columns: minmax(0,1fr) var(--apx-stage) minmax(0,1fr);
+  column-gap: 48px; align-items: center; width: 100%;
+}
+.apx_steps { height: var(--apx-stage); display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
+.apx_heading {
+  margin: 0; font-family: var(--_typography---font--secondary-family);
+  font-weight: var(--_typography---font--primary-light); font-size: clamp(40px, 3.9vw, 56px);
+  line-height: 1.1; letter-spacing: -0.02em; color: #000; text-transform: none;
+}
+.apx_list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.apx_step {
+  all: unset; box-sizing: border-box; cursor: pointer; width: 100%;
+  display: flex; gap: 20px; align-items: stretch;
+  font-family: var(--_typography---font--primary-family); font-weight: var(--_typography---font--primary-medium);
+}
+.apx_step:focus-visible { outline: 2px solid var(--swatch--bg-blue); outline-offset: 4px; border-radius: 4px; }
+.apx_rail { flex: none; width: 2px; border-radius: 1px; background: rgba(0,0,0,.12); transition: background-color .5s ease; }
+.apx_step.is-active .apx_rail { background: #000; }
+.apx_step_text { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; min-width: 0; }
+.apx_num { font-size: 16px; line-height: 20px; color: rgba(0,0,0,.3); transition: color .5s ease; }
+.apx_step.is-active .apx_num { color: #000; }
+.apx_name { font-size: 20px; line-height: 24px; color: rgba(0,0,0,.4); transition: color .5s ease; }
+.apx_step.is-active .apx_name { color: #000; }
+.apx_step:not(.is-active):hover .apx_name { color: rgba(0,0,0,.7); }
+
+.apx_card_stage { position: relative; width: var(--apx-stage); height: var(--apx-stage); }
+.apx_card {
+  position: absolute; inset: 0; border-radius: calc(24px * var(--apx-s)); overflow: hidden;
+  background: #f5f8f8; border: 1px solid rgba(0,0,0,.08); isolation: isolate;
+  will-change: transform, filter, opacity; transform-origin: 50% 50%;
+}
+/* background lives on the inner layer: it is the isolated blend group, so mix-blend layers need it as backdrop */
+.apx_card_inner { position: absolute; left: 0; top: 0; width: 526px; height: 526px; transform-origin: 0 0; transform: scale(var(--apx-s)); background: #f5f8f8; }
+
+.apx_detail { display: grid; min-width: 0; }
+.apx_desc {
+  grid-area: 1 / 1; margin: 0; align-self: center;
+  font-family: var(--_typography---font--primary-family); font-weight: var(--_typography---font--primary-medium);
+  font-size: clamp(16px, 1.25vw, 18px); line-height: 1.333; color: rgba(0,0,0,.5);
+}
+
+/* ===== Illustrations (design px inside a 526×526 card) ===== */
+.apx_abs { position: absolute; }
+.apx_img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; pointer-events: none; display: block; }
+.apx_label {
+  position: absolute; display: flex; align-items: center; padding: 6px 16px; border-radius: 100px;
+  border: .5px solid rgba(0,0,0,.4); white-space: nowrap;
+  font-family: var(--_typography---font--secondary-family); font-weight: var(--_typography---font--primary-light);
+  font-size: 14px; line-height: 1.3; letter-spacing: -0.04em; text-transform: uppercase; color: #2d2a3f;
+}
+.apx_protein { position: absolute; display: flex; align-items: center; justify-content: center; mix-blend-mode: darken; }
+.apx_protein > div { flex: none; position: relative; opacity: .6; }
+.apx_glow { position: absolute; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
+
+/* card 1 — ring */
+.apx_c1_ill { left: -124.29px; top: 40.21px; width: 775px; height: 446px; }
+.apx_c1_circle { left: 0; top: 14px; width: 775.14px; height: 384px; }
+.apx_c1_protein { left: 294.87px; top: 216.67px; width: 185.41px; height: 185.04px; }
+.apx_c1_protein > div { width: 136.61px; height: 125.71px; transform: rotate(-42.03deg) skewX(-.14deg); }
+.apx_c1_dna { left: 216px; top: -36px; width: 343px; height: 420px; }
+.apx_c1_glow {
+  left: 114px; top: 268px; width: 116px; height: 137px; background: rgba(200,85,252,.9); filter: blur(40px);
+  -webkit-mask-image: url(assets/mask-ring-highlight.webp); mask-image: url(assets/mask-ring-highlight.webp);
+  -webkit-mask-size: 343px 420px; mask-size: 343px 420px; -webkit-mask-position: -114px -268px; mask-position: -114px -268px;
+}
+.apx_c1_label_top { left: 90.29px; top: 157.79px; }
+.apx_c1_label_bottom { left: 50%; top: 416px; transform: translateX(-50%); margin-left: .5px; }
+
+/* card 2 — omega */
+.apx_c2_ill { left: -94.43px; top: 30px; width: 715.28px; height: 465.2px; }
+.apx_c2_protein { top: 287.28px; width: 157.97px; height: 157.65px; }
+.apx_c2_protein > div { width: 116.39px; height: 107.1px; }
+.apx_c2_protein.is-a { left: 204.81px; }
+.apx_c2_protein.is-a > div { transform: rotate(-42.03deg) skewX(-.14deg); }
+.apx_c2_protein.is-b { left: 346.43px; }
+.apx_c2_protein.is-b > div { transform: rotate(-137.97deg) skewX(.14deg) scaleY(-1); }
+.apx_c2_circle { left: 193.61px; top: 0; width: 328.06px; height: 465.2px; }
+.apx_c2_crop { position: absolute; inset: 0; overflow: hidden; }
+.apx_c2_crop img { position: absolute; left: -76.64%; top: -.01%; width: 254.1%; height: 100.01%; max-width: none; pointer-events: none; }
+.apx_c2_tint { position: absolute; inset: 0; background: #5477d3; mix-blend-mode: hue; }
+.apx_c2_glow {
+  left: 243.42px; top: 287px; width: 189px; height: 119px; background: rgba(200,85,252,.7); filter: blur(44.8px); mix-blend-mode: hue;
+  -webkit-mask-image: url(assets/mask-omega-base.webp); mask-image: url(assets/mask-omega-base.webp);
+  -webkit-mask-size: 328.06px 465.2px; mask-size: 328.06px 465.2px; -webkit-mask-position: -49.82px -287px; mask-position: -49.82px -287px;
+}
+
+/* card 3 — inserted gene */
+.apx_c3_chain { left: 20.21px; top: 240.61px; width: 485.58px; height: 33.77px; }
+.apx_c3_strand { top: -52.94px; width: 249.02px; height: 138.99px; }
+.apx_c3_strand.is-a { left: 0; }
+.apx_c3_strand.is-b { left: 236.4px; }
+.apx_c3_tint { position: absolute; inset: 0; background: #376eff; mix-blend-mode: color; }
+.apx_c3_glow {
+  background: rgba(200,85,252,.7); filter: blur(36.5px); mix-blend-mode: hue;
+  -webkit-mask-image: url(assets/dna-strand.webp); mask-image: url(assets/dna-strand.webp);
+  -webkit-mask-size: 249.02px 138.99px; mask-size: 249.02px 138.99px;
+}
+.apx_c3_glow.is-a { left: 59.58px; top: -28.61px; width: 101px; height: 91px; -webkit-mask-position: -59.58px -24.33px; mask-position: -59.58px -24.33px; }
+.apx_c3_glow.is-b { left: 310.58px; top: -19.61px; width: 100px; height: 92px; -webkit-mask-position: -74.18px -33.33px; mask-position: -74.18px -33.33px; }
+.apx_c3_label { left: 50%; top: 295.38px; transform: translateX(-50%); }
+
+/* ===== Responsive ===== */
+@media screen and (max-width: 1199px) {
+  .apx { --apx-stage: min(420px, 40vw, calc(100svh - 160px)); }
+  .apx_grid { column-gap: 32px; }
+}
+@media screen and (min-width: 1200px) {
+  .apx { --apx-stage: min(526px, calc(100svh - 160px)); }
+}
+@media screen and (max-width: 767px) {
+  .apx { --apx-stage: min(calc(100vw - 2 * var(--site--margin)), 42svh); }
+  .apx_pin { align-items: flex-start; padding-top: clamp(72px, 10svh, 96px); }
+  .apx_grid { grid-template-columns: minmax(0,1fr); row-gap: 20px; justify-items: center; }
+  .apx_steps { display: contents; }
+  .apx_heading { order: 1; justify-self: start; font-size: 36px; }
+  .apx_card_stage { order: 2; }
+  .apx_detail { order: 3; width: 100%; min-height: 7.5em; }
+  .apx_list { order: 4; flex-direction: row; gap: 12px; width: 100%; }
+  .apx_list > li { flex: 1 1 0; min-width: 0; }
+  .apx_step { flex-direction: column; gap: 8px; }
+  .apx_rail { width: 100%; height: 2px; }
+  .apx_step_text { padding: 0; gap: 2px; }
+  .apx_num { font-size: 13px; line-height: 16px; }
+  .apx_name { font-size: 14px; line-height: 18px; }
+  .apx_desc { font-size: 15px; }
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const root = document.querySelector(".apx");
+  if (!root || typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") return;
+
+  // ===== Intro title (same behaviour as the current site) =====
+  const intro = root.querySelector(".apx_intro");
+  const titleMain = intro.querySelector("[title_main]");
+  const title = intro.querySelector("[title]");
+  if (titleMain && typeof SplitText !== "undefined") {
+    SplitText.create(titleMain, {
+      type: "chars, words", autoSplit: true,
+      onSplit(self) {
+        return gsap.timeline({ scrollTrigger: { trigger: intro, start: "top 50%", end: "top 10%", scrub: 1 } })
+          .from(self.chars, { autoAlpha: 0, ease: "power2.out", stagger: { each: 0.01, from: "start" } });
+      }
+    });
+  }
+  if (title && typeof SplitText !== "undefined") {
+    const split = SplitText.create(title, { type: "chars, words" });
+    gsap.set(split.chars, { autoAlpha: 0 });
+    gsap.timeline({ scrollTrigger: { trigger: intro, start: "top 30%", toggleActions: "play none none reverse" } })
+      .to(split.chars, { autoAlpha: 1, ease: "power2.out", stagger: { each: 0.01, from: "start" } });
+  }
+
+  // ===== Cards =====
+  const pin = root.querySelector(".apx_pin");
+  const stage = root.querySelector(".apx_card_stage");
+  const cards = gsap.utils.toArray(".apx_card", root);
+  const descs = gsap.utils.toArray(".apx_desc", root);
+  const steps = gsap.utils.toArray(".apx_step", root);
+  const N = cards.length;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const setScale = () => root.style.setProperty("--apx-s", stage.offsetWidth / 526);
+  setScale();
+  window.addEventListener("resize", setScale);
+
+  // Key poses. Figma's transition frame is the midpoint of these tweens.
+  const ENTER_FROM = reduce
+    ? { yPercent: 12, autoAlpha: 0 }
+    : { xPercent: -6, yPercent: 122, scale: 0.84, rotation: 14, filter: "blur(28px)", autoAlpha: 0 };
+  const EXIT_TO = reduce
+    ? { yPercent: -12 }
+    : { xPercent: 9, yPercent: -125, scale: 0.76, rotation: -18, filter: "blur(28px)" };
+  const REST = { xPercent: 0, yPercent: 0, scale: 1, rotation: 0, filter: "blur(0px)", autoAlpha: 1 };
+
+  gsap.set(cards[0], REST);
+  gsap.set(cards.slice(1), ENTER_FROM);
+  gsap.set(descs.slice(1), { autoAlpha: 0 });
+
+  const HOLD = 0.6, TR = 1;
+  const stateTime = [];   // timeline time to show each step at rest
+  const switchTime = [];  // timeline time when the active step flips
+
+  const tl = gsap.timeline({ defaults: { ease: "none" } });
+  stateTime.push(HOLD * 0.5);
+  tl.to({}, { duration: HOLD });
+  for (let i = 0; i < N - 1; i++) {
+    const t = tl.duration();
+    // exiting card
+    tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
+    tl.to(cards[i], { autoAlpha: 0, duration: TR * 0.5, ease: "power1.in" }, t + TR * 0.5);
+    // entering card
+    tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
+      immediateRender: false }, t);
+    // description cross-fade
+    tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
+    tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
+      immediateRender: false }, t + TR * 0.55);
+    // step list flips at the middle of the transition (see setCurrent)
+    switchTime.push(t + TR * 0.5);
+    tl.to({}, { duration: HOLD }, t + TR);
+    stateTime.push(t + TR + HOLD * (i === N - 2 ? 1 : 0.5));
+  }
+
+  let current = -1;
+  const setCurrent = (idx) => {
+    if (idx === current) return;
+    current = idx;
+    steps.forEach((s, j) => {
+      s.classList.toggle("is-active", j === idx);
+      s.setAttribute("aria-current", j === idx ? "true" : "false");
+    });
+  };
+  setCurrent(0);
+
+  const st = ScrollTrigger.create({
+    trigger: pin,
+    start: "top top",
+    end: () => "+=" + Math.round(window.innerHeight * (N - 1) * 1.1),
+    pin: true,
+    scrub: 1,
+    animation: tl,
+    invalidateOnRefresh: true,
+    onRefresh: setScale,
+    onUpdate(self) {
+      const time = self.progress * tl.duration();
+      setCurrent(switchTime.filter((s) => time >= s).length);
+    }
+  });
+
+  // ===== Click on a step → smooth scroll to that state =====
+  steps.forEach((btn, idx) => {
+    btn.addEventListener("click", () => {
+      const y = st.start + (st.end - st.start) * (stateTime[idx] / tl.duration());
+      const lenis = window.lenis;
+      if (lenis && !lenis.isStopped) {
+        lenis.scrollTo(y, { duration: 1.4 + 0.3 * Math.abs(idx - current), easing: (x) => 1 - Math.pow(1 - x, 4) });
+      } else {
+        window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
+      }
+    });
+  });
+});
+</script>
+  </div>
+
+  <div class="apx_intro">
+    <div class="max-w">
+      <div class="u-container">
+        <div class="s_approach_text_wrap">
+          <h2 title_main="" class="s_approach_title">Our APPROACH IS UNIQUE</h2>
+          <p title="" class="s_approach_descrip">We engineer recombinase enzymes to catalyze targeted, specific and efficient therapeutic gene insertions</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="apx_pin">
+    <div class="max-w">
+      <div class="u-container">
+        <div class="apx_grid">
+          <div class="apx_steps">
+            <h3 class="apx_heading">Precision<br/>for Life</h3>
+            <ol class="apx_list">
+              <li><button type="button" class="apx_step"><span class="apx_rail"></span><span class="apx_step_text"><span class="apx_num">01</span><span class="apx_name">Curative treatment</span></span></button></li>
+              <li><button type="button" class="apx_step"><span class="apx_rail"></span><span class="apx_step_text"><span class="apx_num">02</span><span class="apx_name">Programmable specificity</span></span></button></li>
+              <li><button type="button" class="apx_step"><span class="apx_rail"></span><span class="apx_step_text"><span class="apx_num">03</span><span class="apx_name">Infinite scalability &amp; impact</span></span></button></li>
+            </ol>
+          </div>
+
+          <div class="apx_card_stage">
+            <!-- 01 — ring -->
+            <div class="apx_card" aria-hidden="true"><div class="apx_card_inner">
+              <div class="apx_abs apx_c1_ill">
+                <div class="apx_abs apx_c1_circle">
+                  <div class="apx_protein apx_c1_protein"><div><img class="apx_img" src="assets/protein.webp" alt=""/></div></div>
+                  <div class="apx_abs apx_c1_dna">
+                    <img class="apx_img" src="assets/dna-ring.webp" alt=""/>
+                    <img class="apx_img" src="assets/dna-ring.webp" alt=""/>
+                    <div class="apx_glow apx_c1_glow"></div>
+                    <div class="apx_label apx_c1_label_top">therapeutic gene</div>
+                  </div>
+                </div>
+                <div class="apx_label apx_c1_label_bottom">genome</div>
+              </div>
+            </div></div>
+
+            <!-- 02 — omega -->
+            <div class="apx_card" aria-hidden="true"><div class="apx_card_inner">
+              <div class="apx_abs apx_c2_ill">
+                <div class="apx_protein apx_c2_protein is-a"><div><img class="apx_img" src="assets/protein.webp" alt=""/></div></div>
+                <div class="apx_protein apx_c2_protein is-b"><div><img class="apx_img" src="assets/protein.webp" alt=""/></div></div>
+                <div class="apx_abs apx_c2_circle">
+                  <div class="apx_c2_crop"><img src="assets/dna-omega.webp" alt=""/></div>
+                  <div class="apx_c2_tint"></div>
+                </div>
+                <div class="apx_glow apx_c2_glow"></div>
+              </div>
+            </div></div>
+
+            <!-- 03 — inserted gene -->
+            <div class="apx_card" aria-hidden="true"><div class="apx_card_inner">
+              <div class="apx_abs apx_c3_chain">
+                <div class="apx_abs apx_c3_strand is-a"><img class="apx_img" src="assets/dna-strand.webp" alt=""/></div>
+                <div class="apx_abs apx_c3_strand is-b"><img class="apx_img" src="assets/dna-strand.webp" alt=""/></div>
+                <div class="apx_c3_tint"></div>
+                <div class="apx_glow apx_c3_glow is-a"></div>
+                <div class="apx_glow apx_c3_glow is-b"></div>
+              </div>
+              <div class="apx_label apx_c3_label">inserted therapeutic gene</div>
+            </div></div>
+          </div>
+
+          <div class="apx_detail">
+            <p class="apx_desc">Recombinases are ideal for large gene insertion: they are compact enzymes that operate on large DNA sequences efficiently and specifically in any cell type, in vitro and in vivo.</p>
+            <p class="apx_desc">Using structural modeling, large-scale multiplexed screens and state-of-the-art computational protein design, we have learned to program recombinase specificities to direct insertions into desired genomic sites.</p>
+            <p class="apx_desc">We have demonstrated programmable recombinase-mediated full-length gene insertion in human cells, enabling the same recombinase to insert any therapeutic gene into a validated safe genomic site.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
