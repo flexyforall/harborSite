@@ -1025,9 +1025,15 @@ document.addEventListener("DOMContentLoaded", () => {
   <div class="apx_embed w-embed w-script">
 <style>
 /* ===== Approach v2 — layout ===== */
-.apx { --apx-stage: 526px; --apx-s: 1; position: relative; }
-.apx_intro { min-height: 100svh; display: flex; align-items: center; justify-content: center; }
-.apx_pin { height: 100svh; overflow: hidden; display: flex; align-items: center; }
+.apx { --apx-stage: 526px; --apx-s: 1; --apx-intro-h: 150px; position: relative; padding-top: var(--_spacing---section-space--main-120px); }
+/* desktop: title + cards are one composition pinned together (Figma: 40px gap + 48px padding = 88px) */
+.apx_pin_wrap { min-height: 100svh; display: flex; flex-direction: column; justify-content: center; }
+.apx_pin {
+  padding: 88px 0; display: flex; align-items: center;
+  /* soft edges instead of a hard crop while cards fly in/out */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 72px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 72px, #000 calc(100% - 72px), transparent 100%);
+}
 .apx_grid {
   display: grid; grid-template-columns: minmax(0,1fr) var(--apx-stage) minmax(0,1fr);
   column-gap: 48px; align-items: center; width: 100%;
@@ -1132,15 +1138,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ===== Responsive ===== */
 @media screen and (max-width: 1199px) {
-  .apx { --apx-stage: min(420px, 40vw, calc(100svh - 160px)); }
+  .apx { --apx-stage: min(420px, 40vw, calc(100svh - var(--apx-intro-h) - 200px)); }
   .apx_grid { column-gap: 32px; }
 }
 @media screen and (min-width: 1200px) {
-  .apx { --apx-stage: min(526px, calc(100svh - 160px)); }
+  .apx { --apx-stage: min(526px, calc(100svh - var(--apx-intro-h) - 200px)); }
 }
 @media screen and (max-width: 767px) {
   .apx { --apx-stage: min(calc(100vw - 2 * var(--site--margin)), 42svh); }
-  .apx_pin { align-items: flex-start; padding-top: clamp(72px, 10svh, 96px); }
+  .apx_pin_wrap { display: block; min-height: 0; }
+  .apx_pin { height: 100svh; overflow: hidden; align-items: flex-start; padding: clamp(72px, 10svh, 96px) 0 0; -webkit-mask-image: none; mask-image: none; }
   .apx_grid { grid-template-columns: minmax(0,1fr); row-gap: 20px; justify-items: center; }
   .apx_steps { display: contents; }
   .apx_heading { order: 1; justify-self: start; font-size: 36px; }
@@ -1182,7 +1189,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===== Cards =====
-  const pin = root.querySelector(".apx_pin");
+  const wrap = root.querySelector(".apx_pin_wrap");
+  const pinBox = root.querySelector(".apx_pin");
   const stage = root.querySelector(".apx_card_stage");
   const cards = gsap.utils.toArray(".apx_card", root);
   const descs = gsap.utils.toArray(".apx_desc", root);
@@ -1190,9 +1198,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const N = cards.length;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const setScale = () => root.style.setProperty("--apx-s", stage.offsetWidth / 526);
-  setScale();
-  window.addEventListener("resize", setScale);
+  const setLayout = () => {
+    root.style.setProperty("--apx-intro-h", intro.offsetHeight + "px");
+    root.style.setProperty("--apx-s", stage.offsetWidth / 526);
+  };
+  setLayout();
+  window.addEventListener("resize", setLayout);
+  ScrollTrigger.addEventListener("refreshInit", setLayout);
 
   // Key poses. Figma's transition frame is the midpoint of these tweens.
   const ENTER_FROM = reduce
@@ -1203,36 +1215,12 @@ document.addEventListener("DOMContentLoaded", () => {
     : { xPercent: 9, yPercent: -125, scale: 0.76, rotation: -18, filter: "blur(28px)" };
   const REST = { xPercent: 0, yPercent: 0, scale: 1, rotation: 0, filter: "blur(0px)", autoAlpha: 1 };
 
-  gsap.set(cards[0], REST);
-  gsap.set(cards.slice(1), ENTER_FROM);
-  gsap.set(descs.slice(1), { autoAlpha: 0 });
-
   const HOLD = 0.6, TR = 1;
+  const SCROLL_PER_STEP = 1.8; // viewport heights of scroll per card change
+  let st = null, tl = null, current = -1;
   const stateTime = [];   // timeline time to show each step at rest
   const switchTime = [];  // timeline time when the active step flips
 
-  const tl = gsap.timeline({ defaults: { ease: "none" } });
-  stateTime.push(HOLD * 0.5);
-  tl.to({}, { duration: HOLD });
-  for (let i = 0; i < N - 1; i++) {
-    const t = tl.duration();
-    // exiting card
-    tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
-    tl.to(cards[i], { autoAlpha: 0, duration: TR * 0.5, ease: "power1.in" }, t + TR * 0.5);
-    // entering card
-    tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
-      immediateRender: false }, t);
-    // description cross-fade
-    tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
-    tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
-      immediateRender: false }, t + TR * 0.55);
-    // step list flips at the middle of the transition (see setCurrent)
-    switchTime.push(t + TR * 0.5);
-    tl.to({}, { duration: HOLD }, t + TR);
-    stateTime.push(t + TR + HOLD * (i === N - 2 ? 1 : 0.5));
-  }
-
-  let current = -1;
   const setCurrent = (idx) => {
     if (idx === current) return;
     current = idx;
@@ -1241,30 +1229,63 @@ document.addEventListener("DOMContentLoaded", () => {
       s.setAttribute("aria-current", j === idx ? "true" : "false");
     });
   };
-  setCurrent(0);
 
-  const st = ScrollTrigger.create({
-    trigger: pin,
-    start: "top top",
-    end: () => "+=" + Math.round(window.innerHeight * (N - 1) * 1.1),
-    pin: true,
-    scrub: 1,
-    animation: tl,
-    invalidateOnRefresh: true,
-    onRefresh: setScale,
-    onUpdate(self) {
-      const time = self.progress * tl.duration();
-      setCurrent(switchTime.filter((s) => time >= s).length);
+  const build = (pinEl) => {
+    stateTime.length = 0; switchTime.length = 0; current = -1;
+    gsap.set(cards[0], REST);
+    gsap.set(cards.slice(1), ENTER_FROM);
+    gsap.set(descs[0], { autoAlpha: 1, y: 0 });
+    gsap.set(descs.slice(1), { autoAlpha: 0 });
+
+    tl = gsap.timeline({ defaults: { ease: "none" } });
+    stateTime.push(HOLD * 0.5);
+    tl.to({}, { duration: HOLD });
+    for (let i = 0; i < N - 1; i++) {
+      const t = tl.duration();
+      // exiting card
+      tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
+      tl.to(cards[i], { autoAlpha: 0, duration: TR * 0.5, ease: "power1.in" }, t + TR * 0.5);
+      // entering card
+      tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
+        immediateRender: false }, t);
+      // description cross-fade
+      tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
+      tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
+        immediateRender: false }, t + TR * 0.55);
+      // step list flips at the middle of the transition (see setCurrent)
+      switchTime.push(t + TR * 0.5);
+      tl.to({}, { duration: HOLD }, t + TR);
+      stateTime.push(t + TR + HOLD * (i === N - 2 ? 1 : 0.5));
     }
-  });
+    setCurrent(0);
+
+    st = ScrollTrigger.create({
+      trigger: pinEl,
+      start: "top top",
+      end: () => "+=" + Math.round(window.innerHeight * (N - 1) * SCROLL_PER_STEP),
+      pin: true,
+      scrub: 1.6,
+      animation: tl,
+      invalidateOnRefresh: true,
+      onUpdate(self) {
+        const time = self.progress * tl.duration();
+        setCurrent(switchTime.filter((s) => time >= s).length);
+      }
+    });
+  };
+
+  const mm = gsap.matchMedia();
+  mm.add("(min-width: 768px)", () => build(wrap));
+  mm.add("(max-width: 767px)", () => build(pinBox));
 
   // ===== Click on a step → smooth scroll to that state =====
   steps.forEach((btn, idx) => {
     btn.addEventListener("click", () => {
+      if (!st) return;
       const y = st.start + (st.end - st.start) * (stateTime[idx] / tl.duration());
       const lenis = window.lenis;
       if (lenis && !lenis.isStopped) {
-        lenis.scrollTo(y, { duration: 1.4 + 0.3 * Math.abs(idx - current), easing: (x) => 1 - Math.pow(1 - x, 4) });
+        lenis.scrollTo(y, { duration: 1.8 + 0.5 * Math.abs(idx - current), easing: (x) => 1 - Math.pow(1 - x, 4) });
       } else {
         window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
       }
@@ -1274,6 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
   </div>
 
+  <div class="apx_pin_wrap">
   <div class="apx_intro">
     <div class="max-w">
       <div class="u-container">
@@ -1349,6 +1371,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
     </div>
+  </div>
   </div>
 </section>
 <div class="scroll_text_wrap"><div class="scroll_text_list"><div class="scroll_bg_left"></div><div class="scroll_text_track marquee"><div class="scroll_text_item"><div class="scroll_text">advisors</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">team</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">and</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/></div><div class="scroll_text_item"><div class="scroll_text">advisors</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">team</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">and</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/></div></div><div class="scroll_text_track marquee"><div class="scroll_text_item"><div class="scroll_text">advisors</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">team</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">and</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/></div><div class="scroll_text_item"><div class="scroll_text">advisors</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">team</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/><div class="scroll_text">and</div><img src="https://cdn.prod.website-files.com/6a0422c4847a2c817f91ff5a/6a1583786304187992f630d6_img-scroll.avif" alt="" class="scroll_img"/></div></div><div class="scroll_bg_right"></div></div></div><section class="s-team"><div data-wf--spacer--variant="main" class="u-section-spacer w-variant-60a7ad7d-02b0-6682-95a5-2218e6fd1490 u-ignore-trim"></div><div class="max-w"><div class="s_team_container u-container"><div section-list="" class="s_team_content"><div class="s_team_tag_wrap"><div section-tag="" class="s_team_tag_text">LEADERSHIP</div><div tag-line="" class="s_team_tag_line"></div></div><div class="s_team_top_col w-dyn-list"><div role="list" class="s_team_top_list w-dyn-items"><div section-card="" role="listitem" class="s_team_top_item w-dyn-item"><div data-wf--card-team--variant="big" class="s_team_card"><div class="s_team_card_img_wrap"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a047681444de70f031b1fdd_Erik%20Aznauryan.avif" class="img_full"/></div><div class="s_team_card_name_wrap"><div class="s_team_card_name">Erik Aznauryan</div><div class="s_team_card_role">CO-FOUNDER &amp; CEO</div></div></div></div><div section-card="" role="listitem" class="s_team_top_item w-dyn-item"><div data-wf--card-team--variant="big" class="s_team_card"><div class="s_team_card_img_wrap"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a04770edc15e7679cde11f4_Ben%20Weinberg.avif" class="img_full"/></div><div class="s_team_card_name_wrap"><div class="s_team_card_name">Ben Weinberg</div><div class="s_team_card_role">CO-FOUNDER &amp; CSO</div></div></div></div></div></div></div><div data-wf--spacer--variant="main" class="u-section-spacer w-variant-60a7ad7d-02b0-6682-95a5-2218e6fd1490 u-ignore-trim"></div><div section-list="" class="s_team_content"><div class="s_team_tag_wrap"><div section-tag="" class="s_team_tag_text">ADVISORS</div><div tag-line="" class="s_team_tag_line"></div></div><div class="s_team_bottom_col w-dyn-list"><div role="list" class="s_team_bottom_list w-dyn-items"><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a04781213f9aa4823385359_George%20Church.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">George Church</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">CO-FOUNDER &amp; SAB CHAIR</div></div></div></div><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a0477c8fec630e6b9db23b9_Tina%20Lebar.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">Tina Lebar</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">CO-FOUNDER &amp; SAB MEMBER</div></div></div></div><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a047855afcc734c97f10692_Roger%20Hajjar.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">Roger Hajjar</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">SAB MEMBER</div></div></div></div><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a0478c570ec5c2e516b7260_David%20Schaffer.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">David Schaffer</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">SAB MEMBER</div></div></div></div><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a0479125eedad0420268f89_Robert%20Kotin.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">Robert Kotin</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">SAB MEMBER</div></div></div></div><div section-card="" role="listitem" class="s_team_bottom_item w-dyn-item"><div data-wf--card-team--variant="main" class="s_team_card"><div class="s_team_card_img_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><img alt="" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a047952fa021fb32926dfdd_Kent%20Wakeford.avif" class="img_full"/></div><div class="s_team_card_name_wrap w-variant-965bc46b-526a-1949-5863-4e324668a2b7"><div class="s_team_card_name w-variant-965bc46b-526a-1949-5863-4e324668a2b7">Kent Wakeford</div><div class="s_team_card_role w-variant-965bc46b-526a-1949-5863-4e324668a2b7">SAB MEMBER</div></div></div></div></div></div></div></div></div><div data-wf--spacer--variant="main" class="u-section-spacer w-variant-60a7ad7d-02b0-6682-95a5-2218e6fd1490 u-ignore-trim"></div></section><section class="s-blog"><div data-wf--spacer--variant="main" class="u-section-spacer w-variant-60a7ad7d-02b0-6682-95a5-2218e6fd1490 u-ignore-trim"></div><div class="max-w"><div class="s_blog_container u-container"><div section-list="" class="s_blog_content"><div class="s_blog_tag_wrap"><div section-tag="" class="s_blog_tag_text">Insights from HarborSite</div><div tag-line="" class="s_blog_tag_line"></div></div><div class="s_blog_content_list"><div id="w-node-b4783e0e-4cfa-8853-150c-e0b74e0ce807-7f91ff5b" class="s_blog_features_col w-dyn-list"><div role="list" class="s_blog_features_list w-dyn-items"><div section-card="" role="listitem" class="s_blog_features_item w-dyn-item"><div data-wf--card-features--variant="big" class="s_blog_features_card"><div class="s_blog_features_card_img_wrap"><img alt="Harvard Business School Announces Its 2025-2026 Blavatnik Fellows" src="https://cdn.prod.website-files.com/6a0475ce4a33d01bf87e365d/6a3047e0deaff008ac22b18c_Harvard%20Business%20School%20Announces%20Its%202025-2026%20Blavatnik%20Fellows.avif" class="s_blog_features_card_img"/></div><div class="s_blog_features_card_info_wrap"><div class="s_blog_features_card_title_date_wrap"><div class="s_blog_features_card_date">June 5, 2026</div><div class="s_blog_features_card_title_wrap"><div class="s_blog_features_card_title">Harvard Business School Announces Its 2025-2026 Blavatnik Fellows</div></div></div><div data-wf--button-main--variant="blue-64-48" target="_blank" data-button=" " data-trigger="hover focus" class="bn_main_wrap"><div target="_blank" class="clickable_wrap u-cover-absolute"><a aria-label="READ NOW" target="target" href="https://www.hbs.edu/news/releases/Pages/2025-2026-blavatnik-fellows.aspx" class="clickable_link w-inline-block"></a></div><div class="bn_main_element w-variant-2cc6e91c-644e-e453-b919-a822aaf2dade"><div class="bn_main_text_wrap"><div class="bn_main_icons_wrap"><div class="bn_main_icon w-embed"><svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
