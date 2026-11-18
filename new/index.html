@@ -1066,7 +1066,7 @@ document.addEventListener("DOMContentLoaded", () => {
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08); isolation: isolate;
   will-change: transform, filter, opacity; transform-origin: 50% 50%;
 }
-/* fade mode: the card frame stays put, only the illustration dissolves */
+/* fade mode: the card frame stays put, only the illustration swaps */
 .apx[data-apx-mode="fade"] .apx_card_stage::before {
   content: ""; position: absolute; inset: 0; border-radius: calc(24px * var(--apx-s));
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08);
@@ -1203,7 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const steps = gsap.utils.toArray(".apx_step", root);
   const N = cards.length;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // data-apx-mode="fade" on the section: cards cross-fade in place instead of the arc + blur transition
+  // data-apx-mode="fade" on the section: cards swap instantly in place instead of the arc + blur transition
   const FADE = root.dataset.apxMode === "fade";
 
   const setLayout = () => {
@@ -1252,9 +1252,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const t = tl.duration();
       if (FADE) {
         // fade mode: the card dissolves in place, the next one appears on the same spot
-        // quick fade-out (25% of the transition), then the next card fades in on the same spot
-        tl.fromTo(cards[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: TR * 0.25, ease: "power1.in", immediateRender: false }, t + TR * 0.2);
-        tl.fromTo(cards[i + 1], { autoAlpha: 0 }, { autoAlpha: 1, duration: TR * 0.45, ease: "power1.out", immediateRender: false }, t + TR * 0.45);
+        // instant swap in the middle of the transition, no fade
+        tl.set(cards[i], { autoAlpha: 0 }, t + TR * 0.5);
+        tl.set(cards[i + 1], { autoAlpha: 1 }, t + TR * 0.5);
       } else {
         // exiting card
         tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
