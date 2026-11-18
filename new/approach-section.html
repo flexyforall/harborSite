@@ -44,6 +44,7 @@
   will-change: transform, filter, opacity; transform-origin: 50% 50%;
 }
 /* fade mode: the card frame stays put, only the illustration swaps */
+.apx[data-apx-mode="fade"] .apx_rail, .apx[data-apx-mode="fade"] .apx_num, .apx[data-apx-mode="fade"] .apx_name { transition: none; }
 .apx[data-apx-mode="fade"] .apx_card_stage::before {
   content: ""; position: absolute; inset: 0; border-radius: calc(24px * var(--apx-s));
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08);
@@ -240,10 +241,15 @@ document.addEventListener("DOMContentLoaded", () => {
         tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
           immediateRender: false }, t);
       }
-      // description cross-fade
-      tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
-      tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
-        immediateRender: false }, t + TR * 0.55);
+      // description: instant swap in fade mode, cross-fade otherwise
+      if (FADE) {
+        tl.set(descs[i], { autoAlpha: 0 }, t + TR * 0.5);
+        tl.set(descs[i + 1], { autoAlpha: 1, y: 0 }, t + TR * 0.5);
+      } else {
+        tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
+        tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
+          immediateRender: false }, t + TR * 0.55);
+      }
       // step list flips at the middle of the transition (see setCurrent)
       switchTime.push(t + TR * 0.5);
       tl.to({}, { duration: HOLD }, t + TR);
