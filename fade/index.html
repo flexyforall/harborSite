@@ -1252,8 +1252,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const t = tl.duration();
       if (FADE) {
         // fade mode: the card dissolves in place, the next one appears on the same spot
-        tl.fromTo(cards[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: TR * 0.6, ease: "power1.inOut", immediateRender: false }, t);
-        tl.fromTo(cards[i + 1], { autoAlpha: 0 }, { autoAlpha: 1, duration: TR * 0.6, ease: "power1.inOut", immediateRender: false }, t + TR * 0.4);
+        // quick fade-out (25% of the transition), then the next card fades in on the same spot
+        tl.fromTo(cards[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: TR * 0.25, ease: "power1.in", immediateRender: false }, t + TR * 0.2);
+        tl.fromTo(cards[i + 1], { autoAlpha: 0 }, { autoAlpha: 1, duration: TR * 0.45, ease: "power1.out", immediateRender: false }, t + TR * 0.45);
       } else {
         // exiting card
         tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
