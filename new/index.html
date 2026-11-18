@@ -1066,6 +1066,12 @@ document.addEventListener("DOMContentLoaded", () => {
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08); isolation: isolate;
   will-change: transform, filter, opacity; transform-origin: 50% 50%;
 }
+/* fade mode: the card frame stays put, only the illustration dissolves */
+.apx[data-apx-mode="fade"] .apx_card_stage::before {
+  content: ""; position: absolute; inset: 0; border-radius: calc(24px * var(--apx-s));
+  background: #f5f8f8; border: 1px solid rgba(0,0,0,.08);
+}
+.apx[data-apx-mode="fade"] .apx_card { border-color: transparent; }
 /* background lives on the inner layer: it is the isolated blend group, so mix-blend layers need it as backdrop */
 .apx_card_inner { position: absolute; left: 0; top: 0; width: 526px; height: 526px; transform-origin: 0 0; transform: scale(var(--apx-s)); background: #f5f8f8; }
 
@@ -1197,6 +1203,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const steps = gsap.utils.toArray(".apx_step", root);
   const N = cards.length;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // data-apx-mode="fade" on the section: cards cross-fade in place instead of the arc + blur transition
+  const FADE = root.dataset.apxMode === "fade";
 
   const setLayout = () => {
     root.style.setProperty("--apx-intro-h", intro.offsetHeight + "px");
@@ -1233,7 +1241,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const build = (pinEl) => {
     stateTime.length = 0; switchTime.length = 0; current = -1;
     gsap.set(cards[0], REST);
-    gsap.set(cards.slice(1), ENTER_FROM);
+    gsap.set(cards.slice(1), FADE ? { ...REST, autoAlpha: 0 } : ENTER_FROM);
     gsap.set(descs[0], { autoAlpha: 1, y: 0 });
     gsap.set(descs.slice(1), { autoAlpha: 0 });
 
@@ -1242,12 +1250,18 @@ document.addEventListener("DOMContentLoaded", () => {
     tl.to({}, { duration: HOLD });
     for (let i = 0; i < N - 1; i++) {
       const t = tl.duration();
-      // exiting card
-      tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
-      tl.to(cards[i], { autoAlpha: 0, duration: TR * 0.5, ease: "power1.in" }, t + TR * 0.5);
-      // entering card
-      tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
-        immediateRender: false }, t);
+      if (FADE) {
+        // fade mode: the card dissolves in place, the next one appears on the same spot
+        tl.fromTo(cards[i], { autoAlpha: 1 }, { autoAlpha: 0, duration: TR * 0.6, ease: "power1.inOut", immediateRender: false }, t);
+        tl.fromTo(cards[i + 1], { autoAlpha: 0 }, { autoAlpha: 1, duration: TR * 0.6, ease: "power1.inOut", immediateRender: false }, t + TR * 0.4);
+      } else {
+        // exiting card
+        tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
+        tl.to(cards[i], { autoAlpha: 0, duration: TR * 0.5, ease: "power1.in" }, t + TR * 0.5);
+        // entering card
+        tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
+          immediateRender: false }, t);
+      }
       // description cross-fade
       tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
       tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
