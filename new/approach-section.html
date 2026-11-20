@@ -211,9 +211,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const isCard = list === cards;
       if (j === idx) {
         if (+gsap.getProperty(el, "opacity") < 0.05) gsap.set(el, isCard ? { scale: 0.985 } : { y: 8 });
-        gsap.to(el, { autoAlpha: 1, scale: 1, y: 0, duration: 0.45, delay: 0.12, ease: "power2.out", overwrite: true });
+        gsap.to(el, { autoAlpha: 1, scale: 1, y: 0, duration: 0.8, delay: 0.2, ease: "sine.inOut", overwrite: true });
       } else {
-        gsap.to(el, { autoAlpha: 0, duration: 0.3, ease: "power1.out", overwrite: true });
+        gsap.to(el, { autoAlpha: 0, duration: 0.6, ease: "sine.inOut", overwrite: true });
       }
     }));
   };
