@@ -1066,9 +1066,7 @@ document.addEventListener("DOMContentLoaded", () => {
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08); isolation: isolate;
   will-change: transform, filter, opacity; transform-origin: 50% 50%;
 }
-/* fade mode: the card frame stays put, only the illustration swaps */
-.apx[data-apx-mode="fade"] .apx_rail, .apx[data-apx-mode="fade"] .apx_num, .apx[data-apx-mode="fade"] .apx_name { transition: none; }
-.apx[data-apx-mode="fade"] .apx_card_stage::before {
+/* fade mode: the card frame stays put, only the illustration cross-fades */.apx[data-apx-mode="fade"] .apx_card_stage::before {
   content: ""; position: absolute; inset: 0; border-radius: calc(24px * var(--apx-s));
   background: #f5f8f8; border: 1px solid rgba(0,0,0,.08);
 }
@@ -1204,7 +1202,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const steps = gsap.utils.toArray(".apx_step", root);
   const N = cards.length;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // data-apx-mode="fade" on the section: cards swap instantly in place instead of the arc + blur transition
+  // data-apx-mode="fade" on the section: cards cross-fade in place (time-based) instead of the arc + blur transition
   const FADE = root.dataset.apxMode === "fade";
 
   const setLayout = () => {
@@ -1230,9 +1228,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const stateTime = [];   // timeline time to show each step at rest
   const switchTime = [];  // timeline time when the active step flips
 
+  // fade mode: light cross-fade with a fixed duration, independent of scroll speed
+  const swapTo = (idx) => {
+    [cards, descs].forEach((list) => list.forEach((el, j) => {
+      const isCard = list === cards;
+      if (j === idx) {
+        if (+gsap.getProperty(el, "opacity") < 0.05) gsap.set(el, isCard ? { scale: 0.985 } : { y: 8 });
+        gsap.to(el, { autoAlpha: 1, scale: 1, y: 0, duration: 0.45, delay: 0.12, ease: "power2.out", overwrite: true });
+      } else {
+        gsap.to(el, { autoAlpha: 0, duration: 0.3, ease: "power1.out", overwrite: true });
+      }
+    }));
+  };
+
   const setCurrent = (idx) => {
     if (idx === current) return;
+    const prev = current;
     current = idx;
+    if (FADE && prev >= 0) swapTo(idx);
     steps.forEach((s, j) => {
       s.classList.toggle("is-active", j === idx);
       s.setAttribute("aria-current", j === idx ? "true" : "false");
@@ -1252,10 +1265,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < N - 1; i++) {
       const t = tl.duration();
       if (FADE) {
-        // fade mode: the card dissolves in place, the next one appears on the same spot
-        // instant swap in the middle of the transition, no fade
-        tl.set(cards[i], { autoAlpha: 0 }, t + TR * 0.5);
-        tl.set(cards[i + 1], { autoAlpha: 1 }, t + TR * 0.5);
+        // fade mode: cards are not scrubbed; swapTo() plays a short time-based cross-fade when the step flips
       } else {
         // exiting card
         tl.fromTo(cards[i], { ...REST }, { ...EXIT_TO, duration: TR, ease: "sine.inOut", immediateRender: false }, t);
@@ -1264,11 +1274,8 @@ document.addEventListener("DOMContentLoaded", () => {
         tl.fromTo(cards[i + 1], { ...ENTER_FROM }, { ...REST, autoAlpha: 1, duration: TR, ease: "sine.inOut",
           immediateRender: false }, t);
       }
-      // description: instant swap in fade mode, cross-fade otherwise
-      if (FADE) {
-        tl.set(descs[i], { autoAlpha: 0 }, t + TR * 0.5);
-        tl.set(descs[i + 1], { autoAlpha: 1, y: 0 }, t + TR * 0.5);
-      } else {
+      // description: handled by swapTo() in fade mode, scrubbed cross-fade otherwise
+      if (!FADE) {
         tl.to(descs[i], { autoAlpha: 0, duration: TR * 0.6, ease: "power1.in" }, t);
         tl.fromTo(descs[i + 1], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: TR * 0.45, ease: "power2.out",
           immediateRender: false }, t + TR * 0.55);
